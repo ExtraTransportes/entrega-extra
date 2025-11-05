@@ -49,7 +49,7 @@
       r.onload=()=>{
         const b=r.result.split(',')[1];
         const dados={nota:n,placa:document.getElementById('placa').value,nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`,file:b};
-        fetch('COLE_AQUI_O_LINK_DO_WEB_APP',{
+        fetch('https://script.google.com/macros/s/AKfycbwRkxbim-KubR_VYIzPAsL2eFTxsJDnpYyUaRRmKXyzm40zNNv1Pt8x-qXZ8L1pl87q/exec',{
           method:'POST',
           body:JSON.stringify(dados),
           headers:{'Content-Type':'text/plain'}
