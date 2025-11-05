@@ -3,72 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Extra Transportes - Comprovante</title>
+  <title>Extra Transportes</title>
   <style>
-    body {font-family: Arial; background: linear-gradient(#007bff, #fff); margin:0; padding:20px; text-align:center;}
-    .container {background:white; max-width:400px; margin:auto; padding:30px; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2);}
-    logo {width:250px; margin-bottom:20px;}
-    input, button {width:90%; padding:15px; margin:10px; border-radius:10px; border:1px solid #007bff; font-size:18px;}
-    button {background:#007bff; color:white; font-weight:bold;}
-    #preview {max-width:100%; border-radius:15px; margin:20px 0; display:none;}
-    .azul {color:#007bff;}
+    body{font-family:Arial;background:linear-gradient(#007bff,#fff);margin:0;padding:20px;text-align:center}
+    .c{background:#fff;max-width:420px;margin:auto;padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
+    .logo{width:280px;margin-bottom:20px}
+    input,button{width:90%;padding:16px;margin:12px;border-radius:12px;border:2px solid #007bff;font-size:18px}
+    button{background:#007bff;color:#fff;font-weight:bold}
+    #prev{max-width:100%;border-radius:15px;margin:20px 0;display:none}
+    #ok{margin-top:15px;font-weight:bold;color:green}
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="https://iili.io/3fO9x9P.png" alt="Extra Transportes" class="logo">
-    <h2 class="azul">📦 Comprovante de Entrega</h2>
+  <div class="c">
+    <img src="https://i.postimg.cc/3xG3YJ7K/extra-transportes.png" alt="Extra Transportes" class="logo">
+    <h2 style="color:#007bff">Comprovante de Entrega</h2>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa do Caminhão">
-    <button onclick="tirarFoto()">📸 Tirar Foto</button>
-    <img id="preview" src="" alt="Prévia">
-    <button onclick="enviar()" id="btnEnviar" style="display:none;">🚛 Enviar para Transportadora</button>
-    <p id="status"></p>
+    <button onclick="tirar()">Tirar Foto</button>
+    <img id="prev">
+    <button onclick="enviar()" id="env" style="display:none">Enviar para Transportadora</button>
+    <p id="ok"></p>
   </div>
 
   <script>
-    let foto = null;
-    function tirarFoto() {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera';
-      input.onchange = e => {
-        foto = e.target.files[0];
-        const prev = document.getElementById('preview');
-        prev.src = URL.createObjectURL(foto);
-        prev.style.display = 'block';
-        document.getElementById('btnEnviar').style.display = 'block';
+    let foto=null;
+    function tirar(){
+      const i=document.createElement('input');
+      i.type='file'; i.accept='image/*'; i.capture='environment';
+      i.onchange=e=>{
+        foto=e.target.files[0];
+        document.getElementById('prev').src=URL.createObjectURL(foto);
+        document.getElementById('prev').style.display='block';
+        document.getElementById('env').style.display='block';
       };
-      input.click();
+      i.click();
     }
-
-    function enviar() {
-      const nota = document.getElementById('nota').value.trim();
-      if (!nota || !foto) return alert("Preencha a nota e tire a foto!");
-      
-      document.getElementById('status').innerHTML = "Enviando...";
-      
-      const reader = new FileReader();
-      reader.onload = function() {
-        const base64 = reader.result.split(',')[1ainable];
-        const dados = {
-          nota: nota,
-          placa: document.getElementById('placa').value,
-          nome: `${nota}_${new Date().toISOString().slice(0,10)}.jpg`,
-          file: base64
-        };
-        
-        fetch('https://script.google.com/macros/s/AKfycbxn7r5vRZNz9kK9v2fF8zqW4uL9pQeRtY6uI7oP8/exec', {
-          method: 'POST',
-          body: JSON.stringify(dados)
+    function enviar(){
+      const n=document.getElementById('nota').value.trim();
+      if(!n||!foto) return alert("Preencha a nota e tire a foto!");
+      document.getElementById('ok').innerHTML="Enviando...";
+      const r=new FileReader();
+      r.onload=()=>{
+        const b=r.result.split(',')[1];
+        fetch('https://script.google.com/macros/s/AKfycbxn7r5vRZNz9kK9v2fF8zqW4uL9pQeRtY6uI7oP8/exec',{
+          method:'POST',
+          body:JSON.stringify({nota:n, placa:document.getElementById('placa').value, nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`, file:b})
         })
-        .then(() => {
-          document.getElementById('status').innerHTML = "✅ Enviado com sucesso!";
-          setTimeout(() => location.reload(), 2000);
-        })
-        .catch(() => alert("Erro de internet. Tente de novo."));
-      };
-      reader.readAsDataURL(foto);
-    }
-  </script>
-</body>
-</html>
+        .then(()=>{document.getElementById('ok').innerHTML="En
