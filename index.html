@@ -49,12 +49,13 @@
       r.onload=()=>{
         const b=r.result.split(',')[1];
         const dados={nota:n,placa:document.getElementById('placa').value,nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`,file:b};
-        fetch('https://script.google.com/macros/s/AKfycbyR8vL3kP9mN6tQeW2uY5hJ1cV4bN7mJ0/exec',{
+        fetch('https://script.google.com/macros/s/AKfycbz1kL9pQ7rT5uY3nM6vW2eX8cV4bN7mJ0/exec',{
           method:'POST',
-          mode:'no-cors',
-          body:JSON.stringify(dados)
+          body:JSON.stringify(dados),
+          headers:{'Content-Type':'text/plain'}
         })
-        .then(()=>{document.getElementById('ok').innerHTML="Enviado com sucesso!";setTimeout(()=>location.reload(),2000)})
+        .then(r=>r.text())
+        .then(t=>{if(t==="OK"){document.getElementById('ok').innerHTML="Enviado com sucesso!";setTimeout(()=>location.reload(),2000)}else{alert("Erro: "+t)}})
         .catch(()=>{document.getElementById('ok').innerHTML="Sem internet. Tente de novo."});
       };
       r.readAsDataURL(foto);
