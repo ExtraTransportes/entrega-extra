@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Extra Transportes</title>
   <style>
-    body{font-family:Arial;background:linear-gradient(#007bff,#fff);margin:0;padding:20px;text-align:center}
-    .c{background:#fff;max-width:420px;margin:auto;padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
-    .logo{width:280px;margin-bottom:20px}
-    input,button{width:90%;padding:16px;margin:12px;border-radius:12px;border:2px solid #007bff;font-size:18px}
-    button{background:#007bff;color:#fff;font-weight:bold}
-    #prev{max-width:100%;border-radius:15px;margin:20px 0;display:none}
+    body{font-family:Arial;background:#f8f9fa;margin:0;padding:20px;text-align:center}
+    .c{background:#fff;max-width:420px;margin:auto;padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,.2)}
+    .logo{width:280px;margin:20px auto;display:block}
+    input,button{width:90%;padding:16px;margin:12px auto;display:block;border-radius:12px;border:2px solid #007bff;font-size:18px;box-sizing:border-box}
+    button{background:#007bff;color:#fff;font-weight:bold;cursor:pointer}
+    #prev{max-width:100%;border-radius:15px;margin:20px auto;display:none}
     #ok{margin-top:15px;font-weight:bold;color:green}
+    h2{color:#007bff}
   </style>
 </head>
 <body>
   <div class="c">
-    <img src="https://i.postimg.cc/3xG3YJ7K/extra-transportes.png" alt="Extra Transportes" class="logo">
-    <h2 style="color:#007bff">Comprovante de Entrega</h2>
+    <img src="logo.png" alt="Extra Transportes" class="logo" onerror="this.style.display='none'">
+    <h2>Comprovante de Entrega</h2>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa do Caminhão">
     <button onclick="tirar()">Tirar Foto</button>
@@ -33,8 +34,9 @@
       i.type='file'; i.accept='image/*'; i.capture='environment';
       i.onchange=e=>{
         foto=e.target.files[0];
-        document.getElementById('prev').src=URL.createObjectURL(foto);
-        document.getElementById('prev').style.display='block';
+        const p=document.getElementById('prev');
+        p.src=URL.createObjectURL(foto);
+        p.style.display='block';
         document.getElementById('env').style.display='block';
       };
       i.click();
@@ -48,6 +50,14 @@
         const b=r.result.split(',')[1];
         fetch('https://script.google.com/macros/s/AKfycbxn7r5vRZNz9kK9v2fF8zqW4uL9pQeRtY6uI7oP8/exec',{
           method:'POST',
-          body:JSON.stringify({nota:n, placa:document.getElementById('placa').value, nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`, file:b})
+          body:JSON.stringify({nota:n,placa:document.getElementById('placa').value,nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`,file:b}),
+          headers:{'Content-Type':'text/plain'}
         })
-        .then(()=>{document.getElementById('ok').innerHTML="En
+        .then(()=>{document.getElementById('ok').innerHTML="Enviado com sucesso!";setTimeout(()=>location.reload(),2000)})
+        .catch(()=>{document.getElementById('ok').innerHTML="Sem internet. Tente de novo."});
+      };
+      r.readAsDataURL(foto);
+    }
+  </script>
+</body>
+</html>
