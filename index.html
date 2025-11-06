@@ -20,12 +20,16 @@
     .camera-actions{margin-top:10px;display:flex;gap:10px;justify-content:center}
     .camera-actions button{width:48%;padding:14px;font-size:16px}
     .offline-msg{background:#fff3cd;padding:10px;border-radius:8px;margin:10px 0;font-size:14px;color:#856404}
+    .no-internet{background:#f8d7da;padding:15px;border-radius:10px;margin:10px 0;color:#721c24;font-weight:bold}
   </style>
 </head>
 <body>
   <div class="c">
     <img src="logo.png" alt="Extra Transportes" class="logo" onerror="this.style.display='none'">
     <h2>Comprovante de Entrega</h2>
+    <div id="no-internet" class="no-internet" style="display:none">
+      Sem internet. Funciona offline! As fotos serão enviadas quando voltar.
+    </div>
     <input type="text" id="motorista" placeholder="Nome do Motorista" required>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa (ex: ABC1D23)" maxlength="7" required>
@@ -43,7 +47,20 @@
     const STORE_NAME = 'pendentes';
     let db;
 
-    // Abre IndexedDB
+    // Verifica internet
+    function verificarInternet() {
+      const noInt = document.getElementById('no-internet');
+      if (!navigator.onLine) {
+        noInt.style.display = 'block';
+      } else {
+        noInt.style.display = 'none';
+      }
+    }
+    verificarInternet();
+    window.addEventListener('online', () => { verificarInternet(); tentarEnviarPendentes(); });
+    window.addEventListener('offline', verificarInternet);
+
+    // IndexedDB
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = e => {
       db = e.target.result;
@@ -194,7 +211,6 @@
             headers: {'Content-Type': 'text/plain'},
             mode: 'no-cors'
           });
-          // Remove após envio
           setTimeout(() => {
             const tx2 = db.transaction(STORE_NAME, 'readwrite');
             tx2.objectStore(STORE_NAME).delete(p.id);
@@ -203,8 +219,6 @@
         setTimeout(() => location.reload(), 3000);
       };
     }
-
-    window.addEventListener('online', tentarEnviarPendentes);
 
     function enviar(){
       document.getElementById('progress-container').style.display = 'block';
