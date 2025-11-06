@@ -81,7 +81,7 @@
         reader.onload = ev => {
           const div = document.createElement('div');
           div.className = 'foto-prev';
-          const img = document.createElement('img');
+          const img = document.createElement('img';
           img.src = ev.target.result;
           img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
           const remover = document.createElement('div');
@@ -96,14 +96,14 @@
           div.appendChild(remover);
           document.getElementById('fotos').appendChild(div);
           fotos.push(file);
-          mostrarOpcoesCamera();
+          mostrarAdicionarMais();
         };
         reader.readAsDataURL(file);
       };
       i.click();
     }
 
-    function mostrarOpcoesCamera() {
+    function mostrarAdicionarMais() {
       const existente = document.querySelector('.camera-actions');
       if (existente) existente.remove();
 
@@ -112,14 +112,7 @@
       const btnMais = document.createElement('button');
       btnMais.textContent = 'Adicionar Mais';
       btnMais.onclick = tirarFoto;
-      const btnEnviar = document.createElement('button');
-      btnEnviar.textContent = 'Enviar Tudo';
-      btnEnviar.onclick = () => {
-        actions.remove();
-        enviar();
-      };
       actions.appendChild(btnMais);
-      actions.appendChild(btnEnviar);
       document.getElementById('fotos').appendChild(actions);
       atualizarBotao();
     }
