@@ -10,7 +10,6 @@
     .logo{width:280px;margin:20px auto;display:block}
     input,button{width:90%;padding:16px;margin:12px auto;display:block;border-radius:12px;border:2px solid #007bff;font-size:18px;box-sizing:border-box}
     button{background:#007bff;color:#fff;font-weight:bold;cursor:pointer}
-    button:disabled{background:#ccc;cursor:not-allowed}
     .fotos{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:15px 0}
     .foto-prev{width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid #007bff;position:relative}
     .remover{position:absolute;top:5px;right:5px;background:red;color:white;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;cursor:pointer}
@@ -18,33 +17,37 @@
     #progress-bar{height:100%;width:0;background:#007bff;transition:width 0.3s}
     #ok{margin-top:15px;font-weight:bold;color:green}
     h2{color:#007bff}
-    .camera-actions{width:90%;margin:10px auto 0;display:flex;justify-content:center;gap:10px}
-    .camera-actions button{width:100%;padding:14px;font-size:16px;margin:0}
-    .obs{background:#fff3cd;padding:12px;border-radius:10px;margin:15px 0 10px;font-size:14px;color:#856404;line-height:1.4}
-    .exemplo-img{width:90%;max-width:300px;margin:10px auto;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
-    .contador{font-size:14px;color:#666;margin-top:8px}
+    .camera-actions{
+      width:90%;
+      margin:10px auto 0;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .camera-actions button{
+      width:100%;
+      padding:14px;
+      font-size:16px;
+      margin:0;
+    }
   </style>
 </head>
 <body>
   <div class="c">
     <img src="logo.png" alt="Extra Transportes" class="logo" onerror="this.style.display='none'">
     <h2>Comprovante de Entrega</h2>
-
     <div class="obs">
       ⚠️ Fotos devem ser nítidas e bem iluminadas.<br>
-      ⚠️ Se não, pediremos novo envio.<br>
-      ⚠️ Permita GPS e câmera para funcionar clicando em "PERMITIR".
-    </div>
+      ⚠️ Fotos não Legiveis sera solicitado novo envio.<br>
+      ⚠️ Site vai solicitar permissões, clique em "Permitir" caso contrario nao conseguirá finalizar envio.
+    <div>
 
     <img src="exemplo.jpg" alt="Foto de exemplo" class="exemplo-img" onerror="this.style.display='none'">
-
+      
     <input type="text" id="motorista" placeholder="Nome do Motorista" required>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa (ex: ABC1D23)" maxlength="7" required>
-    
-    <button id="btnIniciar" onclick="iniciarComTimer()">Iniciar Comprovante</button>
-    <p id="contador" class="contador" style="display:none"></p>
-
+    <button onclick="iniciar()">Iniciar Comprovante</button>
     <div class="fotos" id="fotos"></div>
     <div id="progress-container"><div id="progress-bar"></div></div>
     <button onclick="enviar()" id="env" style="display:none">Enviar para Transportadora</button>
@@ -53,8 +56,6 @@
 
   <script>
     let fotos = [], lat = null, lng = null, gpsPronto = false;
-    const btnIniciar = document.getElementById('btnIniciar');
-    const contadorEl = document.getElementById('contador');
 
     // Validação de placa
     document.getElementById('placa').addEventListener('input', function(e) {
@@ -79,32 +80,13 @@
       return `${dia}/${mes}/${ano} ${hora}:${min}`;
     }
 
-    function iniciarComTimer() {
+    function iniciar() {
       const motorista = document.getElementById('motorista').value.trim();
       const n = document.getElementById('nota').value.trim();
       const placa = document.getElementById('placa').value.trim();
       if (!motorista || !n || !placa) return alert("Preencha todos os campos!");
       if (!validarPlaca(placa)) return alert("Placa inválida! Use ABC1D23 ou ABC1234");
 
-      btnIniciar.disabled = true;
-      contadorEl.style.display = 'block';
-      let segundos = 5;
-      contadorEl.innerHTML = `Iniciando em ${segundos}...`;
-
-      const timer = setInterval(() => {
-        segundos--;
-        if (segundos > 0) {
-          contadorEl.innerHTML = `Iniciando em ${segundos}...`;
-        } else {
-          clearInterval(timer);
-          contadorEl.style.display = 'none';
-          btnIniciar.disabled = false;
-          iniciarReal();
-        }
-      }, 1000);
-    }
-
-    function iniciarReal() {
       if (!gpsPronto) {
         if (!navigator.geolocation) return alert("GPS não disponível");
         navigator.geolocation.getCurrentPosition(pos => {
