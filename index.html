@@ -11,12 +11,14 @@
     input,button{width:90%;padding:16px;margin:12px auto;display:block;border-radius:12px;border:2px solid #007bff;font-size:18px;box-sizing:border-box}
     button{background:#007bff;color:#fff;font-weight:bold;cursor:pointer}
     .fotos{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:15px 0}
-    .foto-prev{width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid #007bff}
+    .foto-prev{width:100px;height:100px;object-fit:cover;border-radius:10px;border:2px solid #007bff;position:relative}
+    .remover{position:absolute;top:5px;right:5px;background:red;color:white;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;cursor:pointer}
     #progress-container{width:90%;height:20px;background:#ddd;border-radius:10px;margin:15px auto;overflow:hidden;display:none}
     #progress-bar{height:100%;width:0;background:#007bff;transition:width 0.3s}
     #ok{margin-top:15px;font-weight:bold;color:green}
     h2{color:#007bff}
-    .remover{position:absolute;top:5px;right:5px;background:red;color:white;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;cursor:pointer}
+    .camera-actions{margin-top:10px;display:flex;gap:10px;justify-content:center}
+    .camera-actions button{width:48%;padding:14px;font-size:16px}
   </style>
 </head>
 <body>
@@ -25,8 +27,8 @@
     <h2>Comprovante de Entrega</h2>
     <input type="text" id="motorista" placeholder="Nome do Motorista" required>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
-    <input type="text" id="placa" placeholder="Placa do Caminhão (ex: ABC1D23)" maxlength="7" required>
-    <button onclick="tirar()">Tirar Foto</button>
+    <input type="text" id="placa" placeholder="Placa (ex: ABC1D23)" maxlength="7" required>
+    <button onclick="iniciar()">Iniciar Comprovante</button>
     <div class="fotos" id="fotos"></div>
     <div id="progress-container"><div id="progress-bar"></div></div>
     <button onclick="enviar()" id="env" style="display:none">Enviar para Transportadora</button>
@@ -34,10 +36,9 @@
   </div>
 
   <script>
-    let fotos = [], lat = null, lng = null;
-    const MAX_FOTOS = 6;
+    let fotos = [], lat = null, lng = null, gpsPronto = false;
 
-    // Validação de placa brasileira
+    // Validação de placa
     document.getElementById('placa').addEventListener('input', function(e) {
       let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       if (v.length > 7) v = v.slice(0,7);
@@ -45,22 +46,32 @@
     });
 
     function validarPlaca(placa) {
-      const padrao1 = /^[A-Z]{3}\d[A-Z]\d{2}$/; // ABC1D23
-      const padrao2 = /^[A-Z]{3}\d{4}$/;       // ABC1234
+      const padrao1 = /^[A-Z]{3}\d[A-Z]\d{2}$/;
+      const padrao2 = /^[A-Z]{3}\d{4}$/;
       return padrao1.test(placa) || padrao2.test(placa);
     }
 
-    function tirar(){
-      if (fotos.length >= MAX_FOTOS) return alert(`Máximo de ${MAX_FOTOS} fotos!`);
-      if (!navigator.geolocation) return alert("GPS não disponível");
-      navigator.geolocation.getCurrentPosition(pos => {
-        lat = pos.coords.latitude.toFixed(6);
-        lng = pos.coords.longitude.toFixed(6);
-        abrirCamera();
-      }, () => alert("Permita o GPS para tirar a foto"));
+    function iniciar() {
+      const motorista = document.getElementById('motorista').value.trim();
+      const n = document.getElementById('nota').value.trim();
+      const placa = document.getElementById('placa').value.trim();
+      if (!motorista || !n || !placa) return alert("Preencha todos os campos!");
+      if (!validarPlaca(placa)) return alert("Placa inválida! Use ABC1D23 ou ABC1234");
+
+      if (!gpsPronto) {
+        if (!navigator.geolocation) return alert("GPS não disponível");
+        navigator.geolocation.getCurrentPosition(pos => {
+          lat = pos.coords.latitude.toFixed(6);
+          lng = pos.coords.longitude.toFixed(6);
+          gpsPronto = true;
+          tirarFoto();
+        }, () => alert("Permita o GPS!"));
+      } else {
+        tirarFoto();
+      }
     }
 
-    function abrirCamera(){
+    function tirarFoto() {
       const i = document.createElement('input');
       i.type = 'file'; i.accept = 'image/*'; i.capture = 'environment';
       i.onchange = e => {
@@ -69,10 +80,10 @@
         const reader = new FileReader();
         reader.onload = ev => {
           const div = document.createElement('div');
-          div.style.position = 'relative';
+          div.className = 'foto-prev';
           const img = document.createElement('img');
           img.src = ev.target.result;
-          img.className = 'foto-prev';
+          img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
           const remover = document.createElement('div');
           remover.textContent = '×';
           remover.className = 'remover';
@@ -85,11 +96,32 @@
           div.appendChild(remover);
           document.getElementById('fotos').appendChild(div);
           fotos.push(file);
-          atualizarBotao();
+          mostrarOpcoesCamera();
         };
         reader.readAsDataURL(file);
       };
       i.click();
+    }
+
+    function mostrarOpcoesCamera() {
+      const existente = document.querySelector('.camera-actions');
+      if (existente) existente.remove();
+
+      const actions = document.createElement('div');
+      actions.className = 'camera-actions';
+      const btnMais = document.createElement('button');
+      btnMais.textContent = 'Adicionar Mais';
+      btnMais.onclick = tirarFoto;
+      const btnEnviar = document.createElement('button');
+      btnEnviar.textContent = 'Enviar Tudo';
+      btnEnviar.onclick = () => {
+        actions.remove();
+        enviar();
+      };
+      actions.appendChild(btnMais);
+      actions.appendChild(btnEnviar);
+      document.getElementById('fotos').appendChild(actions);
+      atualizarBotao();
     }
 
     function atualizarBotao() {
@@ -97,14 +129,6 @@
     }
 
     function enviar(){
-      const motorista = document.getElementById('motorista').value.trim();
-      const n = document.getElementById('nota').value.trim();
-      const placa = document.getElementById('placa').value.trim();
-      if (!motorista || !n || !placa || fotos.length === 0 || !lat) 
-        return alert("Preencha tudo, tire pelo menos 1 foto e permita o GPS!");
-      if (!validarPlaca(placa)) 
-        return alert("Placa inválida! Use ABC1D23 ou ABC1234");
-
       document.getElementById('progress-container').style.display = 'block';
       document.getElementById('ok').innerHTML = "Enviando...";
       let enviadas = 0;
@@ -115,12 +139,12 @@
         r.onload = () => {
           const b = r.result.split(',')[1];
           const dados = {
-            nota: n,
-            placa: placa,
-            motorista: motorista,
+            nota: document.getElementById('nota').value,
+            placa: document.getElementById('placa').value,
+            motorista: document.getElementById('motorista').value,
             lat: lat,
             lng: lng,
-            nome: `${n}_${i+1}_${new Date().toISOString().slice(0,10)}.jpg`,
+            nome: `${document.getElementById('nota').value}_${i+1}_${new Date().toISOString().slice(0,10)}.jpg`,
             file: b
           };
           fetch('https://script.google.com/macros/s/AKfycbysbdJhLZKSeN1mCqc6rW4Um6x3iLn161euJPl7GyNo0s_OAfwuHlFMxpMlu_Wbo27D/exec',{
@@ -133,7 +157,7 @@
             document.getElementById('progress-bar').style.width = (enviadas/total*100) + '%';
             if (enviadas === total) {
               document.getElementById('ok').innerHTML="Tudo enviado! Abrindo WhatsApp...";
-              const msg = `Entrega ${n} com ${total} foto(s)!\nMotorista: ${motorista}\nPlaca: ${placa}\nLocal: https://maps.google.com/?q=${lat},${lng}`;
+              const msg = `Entrega ${dados.nota} com ${total} foto(s)!\nMotorista: ${dados.motorista}\nPlaca: ${dados.placa}\nLocal: https://maps.google.com/?q=${lat},${lng}`;
               window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
               setTimeout(()=>location.reload(),3000);
             }
