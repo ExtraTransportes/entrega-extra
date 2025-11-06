@@ -19,6 +19,7 @@
   <div class="c">
     <img src="logo.png" alt="Extra Transportes" class="logo" onerror="this.style.display='none'">
     <h2>Comprovante de Entrega</h2>
+    <input type="text" id="motorista" placeholder="Nome do Motorista" required>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa do Caminhão">
     <button onclick="tirar()">Tirar Foto</button>
@@ -28,34 +29,64 @@
   </div>
 
   <script>
-    let foto=null;
+    let foto = null, lat = null, lng = null;
+
     function tirar(){
-      const i=document.createElement('input');
-      i.type='file'; i.accept='image/*'; i.capture='environment';
-      i.onchange=e=>{
-        foto=e.target.files[0];
-        const p=document.getElementById('prev');
-        p.src=URL.createObjectURL(foto);
-        p.style.display='block';
-        document.getElementById('env').style.display='block';
+      if (!navigator.geolocation) return alert("GPS não disponível");
+      navigator.geolocation.getCurrentPosition(pos => {
+        lat = pos.coords.latitude.toFixed(6);
+        lng = pos.coords.longitude.toFixed(6);
+        abrirCamera();
+      }, () => alert("Permita o GPS para tirar a foto"));
+    }
+
+    function abrirCamera(){
+      const i = document.createElement('input');
+      i.type = 'file'; i.accept = 'image/*'; i.capture = 'environment';
+      i.onchange = e => {
+        foto = e.target.files[0];
+        const p = document.getElementById('prev');
+        p.src = URL.createObjectURL(foto);
+        p.style.display = 'block';
+        document.getElementById('env').style.display = 'block';
       };
       i.click();
     }
+
     function enviar(){
-      const n=document.getElementById('nota').value.trim();
-      if(!n||!foto) return alert("Preencha a nota e tire a foto!");
-      document.getElementById('ok').innerHTML="Enviando...";
-      const r=new FileReader();
-      r.onload=()=>{
-        const b=r.result.split(',')[1];
-        const dados={nota:n,placa:document.getElementById('placa').value,nome:`${n}_${new Date().toISOString().slice(0,10)}.jpg`,file:b};
-        fetch('https://script.google.com/macros/s/AKfycbwRkxbim-KubR_VYIzPAsL2eFTxsJDnpYyUaRRmKXyzm40zNNv1Pt8x-qXZ8L1pl87q/exec',{
+      const motorista = document.getElementById('motorista').value.trim();
+      const n = document.getElementById('nota').value.trim();
+      if (!motorista || !n || !foto || !lat) return alert("Preencha tudo e permita o GPS!");
+      
+      document.getElementById('ok').innerHTML = "Enviando...";
+      const r = new FileReader();
+      r.onload = () => {
+        const b = r.result.split(',')[1];
+        const dados = {
+          nota: n,
+          placa: document.getElementById('placa').value,
+          motorista: motorista,
+          lat: lat,
+          lng: lng,
+          nome: `${n}_${new Date().toISOString().slice(0,10)}.jpg`,
+          file: b
+        };
+        fetch('https://script.google.com/macros/s/AKfycbz41Ugf_LpHwTDYtlTEc8SMTUen_CzymharOrm9GKIT1xIYcovthOq_B2mCDHLmTVw/exec',{
           method:'POST',
           body:JSON.stringify(dados),
           headers:{'Content-Type':'text/plain'}
         })
         .then(r=>r.text())
-        .then(t=>{if(t==="OK"){document.getElementById('ok').innerHTML="Enviado com sucesso!";setTimeout(()=>location.reload(),2000)}else{alert("Erro: "+t)}})
+        .then(t=>{
+          if(t==="OK"){
+            document.getElementById('ok').innerHTML="Enviado! Abrindo WhatsApp...";
+            const msg = `Entrega ${n} confirmada!\nMotorista: ${motorista}\nPlaca: ${dados.placa}\nLocal: https://maps.google.com/?q=${lat},${lng}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            setTimeout(()=>location.reload(),3000);
+          } else {
+            alert("Erro: "+t);
+          }
+        })
         .catch(()=>{document.getElementById('ok').innerHTML="Sem internet. Tente de novo."});
       };
       r.readAsDataURL(foto);
