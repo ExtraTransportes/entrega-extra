@@ -19,17 +19,12 @@
     h2{color:#007bff}
     .camera-actions{margin-top:10px;display:flex;gap:10px;justify-content:center}
     .camera-actions button{width:48%;padding:14px;font-size:16px}
-    .offline-msg{background:#fff3cd;padding:10px;border-radius:8px;margin:10px 0;font-size:14px;color:#856404}
-    .no-internet{background:#f8d7da;padding:15px;border-radius:10px;margin:10px 0;color:#721c24;font-weight:bold}
   </style>
 </head>
 <body>
   <div class="c">
     <img src="logo.png" alt="Extra Transportes" class="logo" onerror="this.style.display='none'">
     <h2>Comprovante de Entrega</h2>
-    <div id="no-internet" class="no-internet" style="display:none">
-      Sem internet. Funciona offline! As fotos serão enviadas quando voltar.
-    </div>
     <input type="text" id="motorista" placeholder="Nome do Motorista" required>
     <input type="text" id="nota" placeholder="Número da Nota/CT-e" required>
     <input type="text" id="placa" placeholder="Placa (ex: ABC1D23)" maxlength="7" required>
@@ -38,36 +33,10 @@
     <div id="progress-container"><div id="progress-bar"></div></div>
     <button onclick="enviar()" id="env" style="display:none">Enviar para Transportadora</button>
     <p id="ok"></p>
-    <div id="offline-msg" class="offline-msg" style="display:none"></div>
   </div>
 
   <script>
     let fotos = [], lat = null, lng = null, gpsPronto = false;
-    const DB_NAME = 'entregasDB';
-    const STORE_NAME = 'pendentes';
-    let db;
-
-    // Verifica internet
-    function verificarInternet() {
-      const noInt = document.getElementById('no-internet');
-      if (!navigator.onLine) {
-        noInt.style.display = 'block';
-      } else {
-        noInt.style.display = 'none';
-      }
-    }
-    verificarInternet();
-    window.addEventListener('online', () => { verificarInternet(); tentarEnviarPendentes(); });
-    window.addEventListener('offline', verificarInternet);
-
-    // IndexedDB
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = e => {
-      db = e.target.result;
-      db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-    };
-    request.onsuccess = e => { db = e.target.result; tentarEnviarPendentes(); };
-    request.onerror = () => console.error("Erro no IndexedDB");
 
     // Validação de placa
     document.getElementById('placa').addEventListener('input', function(e) {
@@ -122,6 +91,7 @@
           canvas.width = img.width;
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
+
           ctx.font = 'bold 40px Arial';
           ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
           ctx.textAlign = 'left';
@@ -129,6 +99,7 @@
           ctx.font = '30px Arial';
           ctx.fillText(formatarDataHora(), 30, img.height - 60);
           ctx.fillText(`${lat}, ${lng}`, 30, img.height - 20);
+
           canvas.toBlob(blob => {
             const novoArquivo = new File([blob], file.name, { type: 'image/jpeg' });
             callback(novoArquivo);
@@ -172,6 +143,7 @@
     function mostrarAdicionarMais() {
       const existente = document.querySelector('.camera-actions');
       if (existente) existente.remove();
+
       const actions = document.createElement('div');
       actions.className = 'camera-actions';
       const btnMais = document.createElement('button');
@@ -186,43 +158,9 @@
       document.getElementById('env').style.display = fotos.length > 0 ? 'block' : 'none';
     }
 
-    function salvarOffline(dados) {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).add(dados);
-      tx.oncomplete = () => {
-        document.getElementById('offline-msg').innerHTML = `Entrega salva! Será enviada quando tiver internet.`;
-        document.getElementById('offline-msg').style.display = 'block';
-      };
-    }
-
-    function tentarEnviarPendentes() {
-      if (!navigator.onLine) return;
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.getAll();
-      request.onsuccess = () => {
-        const pendentes = request.result;
-        if (pendentes.length === 0) return;
-        document.getElementById('ok').innerHTML = `Enviando ${pendentes.length} entrega(s) pendente(s)...`;
-        pendentes.forEach((p, i) => {
-          fetch('COLE_AQUI_O_LINK_DO_WEB_APP', {
-            method: 'POST',
-            body: JSON.stringify(p.dados),
-            headers: {'Content-Type': 'text/plain'},
-            mode: 'no-cors'
-          });
-          setTimeout(() => {
-            const tx2 = db.transaction(STORE_NAME, 'readwrite');
-            tx2.objectStore(STORE_NAME).delete(p.id);
-          }, 1000 * (i + 1));
-        });
-        setTimeout(() => location.reload(), 3000);
-      };
-    }
-
     function enviar(){
       document.getElementById('progress-container').style.display = 'block';
-      document.getElementById('ok').innerHTML = "Preparando envio...";
+      document.getElementById('ok').innerHTML = "Enviando...";
       let enviadas = 0;
       const total = fotos.length;
 
@@ -248,23 +186,18 @@
             nome: `${document.getElementById('nota').value}_${i+1}_${new Date().toISOString().slice(0,10)}.jpg`,
             file: b
           };
-
-          if (navigator.onLine) {
-            fetch('https://script.google.com/macros/s/AKfycbyX-j7qxAd23tCZdh1bSUXV16WrRtLm-THE88l6U8c-p5y7t_moTYY4tGpdoqZB7BSD/exec', {
-              method: 'POST',
-              body: JSON.stringify(dados),
-              headers: {'Content-Type': 'text/plain'},
-              mode: 'no-cors'
-            });
-          } else {
-            salvarOffline({ dados });
-          }
+          fetch('https://script.google.com/macros/s/AKfycbyX-j7qxAd23tCZdh1bSUXV16WrRtLm-THE88l6U8c-p5y7t_moTYY4tGpdoqZB7BSD/exec', {
+            method: 'POST',
+            body: JSON.stringify(dados),
+            headers: {'Content-Type': 'text/plain'},
+            mode: 'no-cors'
+          });
         };
         r.readAsDataURL(foto);
       });
 
       function sucesso() {
-        document.getElementById('ok').innerHTML="Tudo salvo! Abrindo WhatsApp...";
+        document.getElementById('ok').innerHTML="Tudo enviado! Abrindo WhatsApp...";
         const msg = `Entrega ${document.getElementById('nota').value} com ${total} foto(s)!\nMotorista: ${document.getElementById('motorista').value}\nPlaca: ${document.getElementById('placa').value}\nLocal: https://maps.google.com/?q=${lat},${lng}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         setTimeout(() => location.reload(), 3000);
