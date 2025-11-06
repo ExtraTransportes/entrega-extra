@@ -6,7 +6,7 @@
   <title>Extra Transportes</title>
   <style>
     body{font-family:Arial;background:#f8f9fa;margin:0;padding:20px;text-align:center}
-    .c{background:#fff;max-width:420px;margin:auto;padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,.2)}
+    .c{background:#fff;max-width:420px;margin:auto;padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,.2);overflow:hidden}
     .logo{width:280px;margin:20px auto;display:block}
     input,button{width:90%;padding:16px;margin:12px auto;display:block;border-radius:12px;border:2px solid #007bff;font-size:18px;box-sizing:border-box}
     button{background:#007bff;color:#fff;font-weight:bold;cursor:pointer}
@@ -17,8 +17,19 @@
     #progress-bar{height:100%;width:0;background:#007bff;transition:width 0.3s}
     #ok{margin-top:15px;font-weight:bold;color:green}
     h2{color:#007bff}
-    .camera-actions{margin-top:10px;display:flex;gap:10px;justify-content:center}
-    .camera-actions button{width:48%;padding:14px;font-size:16px}
+    .camera-actions{
+      width:90%;
+      margin:10px auto 0;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .camera-actions button{
+      width:100%;
+      padding:14px;
+      font-size:16px;
+      margin:0;
+    }
   </style>
 </head>
 <body>
@@ -91,7 +102,6 @@
           canvas.width = img.width;
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
-
           ctx.font = 'bold 40px Arial';
           ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
           ctx.textAlign = 'left';
@@ -99,7 +109,6 @@
           ctx.font = '30px Arial';
           ctx.fillText(formatarDataHora(), 30, img.height - 60);
           ctx.fillText(`${lat}, ${lng}`, 30, img.height - 20);
-
           canvas.toBlob(blob => {
             const novoArquivo = new File([blob], file.name, { type: 'image/jpeg' });
             callback(novoArquivo);
@@ -143,7 +152,6 @@
     function mostrarAdicionarMais() {
       const existente = document.querySelector('.camera-actions');
       if (existente) existente.remove();
-
       const actions = document.createElement('div');
       actions.className = 'camera-actions';
       const btnMais = document.createElement('button');
