@@ -51,6 +51,16 @@
       return padrao1.test(placa) || padrao2.test(placa);
     }
 
+    function formatarDataHora() {
+      const agora = new Date();
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = agora.getFullYear();
+      const hora = String(agora.getHours()).padStart(2, '0');
+      const min = String(agora.getMinutes()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} ${hora}:${min}`;
+    }
+
     function iniciar() {
       const motorista = document.getElementById('motorista').value.trim();
       const n = document.getElementById('nota').value.trim();
@@ -71,34 +81,62 @@
       }
     }
 
+    function adicionarMarcaDagua(file, callback) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          // Marca d'água
+          ctx.font = 'bold 40px Arial';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.textAlign = 'left';
+          ctx.fillText('ENTREGUE', 30, img.height - 100);
+          ctx.font = '30px Arial';
+          ctx.fillText(formatarDataHora(), 30, img.height - 60);
+          ctx.fillText(`${lat}, ${lng}`, 30, img.height - 20);
+
+          canvas.toBlob(blob => {
+            const novoArquivo = new File([blob], file.name, { type: 'image/jpeg' });
+            callback(novoArquivo);
+          }, 'image/jpeg', 0.9);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     function tirarFoto() {
       const i = document.createElement('input');
       i.type = 'file'; i.accept = 'image/*'; i.capture = 'environment';
       i.onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
+        adicionarMarcaDagua(file, arquivoComMarca => {
           const div = document.createElement('div');
           div.className = 'foto-prev';
-          const img = document.createElement('img';
-          img.src = ev.target.result;
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(arquivoComMarca);
           img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
           const remover = document.createElement('div');
           remover.textContent = '×';
           remover.className = 'remover';
           remover.onclick = () => {
-            fotos = fotos.filter(f => f !== file);
+            fotos = fotos.filter(f => f !== arquivoComMarca);
             div.remove();
             atualizarBotao();
           };
           div.appendChild(img);
           div.appendChild(remover);
           document.getElementById('fotos').appendChild(div);
-          fotos.push(file);
+          fotos.push(arquivoComMarca);
           mostrarAdicionarMais();
-        };
-        reader.readAsDataURL(file);
+        });
       };
       i.click();
     }
